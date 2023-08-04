@@ -66,6 +66,7 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
 
         """
         Initialize the Single Time Series Moving-Window class.
+        The input data for the demo is Argonne_era5_2018.csv
 
         Args:
             data (numpy.array or list): The input data.
@@ -144,6 +145,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
     def correlation(self):
         """
         Calculate Correlation for each window.
+        The input data for the demo is plant_level_hourly_wind_power_forecast.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Correlation values for each window.
@@ -158,6 +160,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
     def mape(self):
         """
         Calculate Mean Absolute Percentage Error for each window.
+        The input data for the demo is plant_level_hourly_wind_power_forecast.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Mean Absolute Percentage Error values for each window.
@@ -172,36 +175,49 @@ class EnsembleMember(UncertaintyQualificationMetrics):
     def nrmse(self):
         """
         Calculate Normalized Root Mean Squared Error for each window.
+        The input data for the demo is plant_level_hourly_wind_power_forecast.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Normalized Root Mean Squared Error values for each window.
         """
-        nrmse_df = pd.DataFrame(columns=['NRMSE'])
+        nrmse_values = []
         for i in range(len(self.data) - self.window_size + 1):
             window = self.data[i:i + self.window_size]
-            result = np.sqrt(((window.iloc[:, 0] - window.iloc[:, 1]) ** 2).mean()) / \
-                     (np.max(window.iloc[:, 0]) - np.min(window.iloc[:, 0]))
-            nrmse_df.loc[i] = result
+            rmse = np.sqrt(((window.iloc[:, 0] - window.iloc[:, 1]) ** 2).mean())
+            data_range = np.max(window.iloc[:, 0]) - np.min(window.iloc[:, 0])
+            if data_range != 0:
+                nrmse_values.append(rmse / data_range)
+            else:
+                nrmse_values.append(rmse / 0.001)
+        nrmse_df = pd.DataFrame({'NRMSE': nrmse_values})
         return nrmse_df
 
     def nmae(self):
         """
         Calculate Normalized Mean Absolute Error for each window.
+        The input data for the demo is plant_level_hourly_wind_power_forecast.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Normalized Mean Absolute Error values for each window.
         """
-        nmae_df = pd.DataFrame(columns=['NMAE'])
+        nmae_df = []  # pd.DataFrame(columns=['NMAE'])
         for i in range(len(self.data) - self.window_size + 1):
             window = self.data[i:i + self.window_size]
-            result = np.mean(np.abs(window.iloc[:, 0] - window.iloc[:, 1])) / \
-                     (np.max(window.iloc[:, 0]) - np.min(window.iloc[:, 0]))
-            nmae_df.loc[i] = result
+            mae = np.mean(np.abs(window.iloc[:, 0] - window.iloc[:, 1]))
+            data_range = (np.max(window.iloc[:, 0]) - np.min(window.iloc[:, 0]))
+            if data_range != 0:
+                nmae_df.append(mae / data_range)
+            else:
+                nmae_df.append(mae / 0.001)
+
+        nmae_df = pd.DataFrame({'NMAE': nmae_df})
         return nmae_df
 
     def spread_index(self):
         """
-        Calculate Spread Index for each window.
+        Calculate Spread Index.
+        Input data should be a DataFrame with more than two columns, each column representing one ensemble member.
+        The input data for the demo is PaloDuro.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Spread Index values for each window.
@@ -229,51 +245,33 @@ class EnsembleMember(UncertaintyQualificationMetrics):
     def predictablity_index(self):
         """
         Calculate Predictablity Index for each window.
+        The input data for the demo is PaloDuro.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Predictablity Index values for each window.
         """
         SI = self.spread_index()
-        PI = pd.DataFrame(columns=['PI_90_10', 'PI_80_20', 'PI_70_30', 'PI_60_40'])
-
+        pi = []
         for i in range(len(SI) - self.window_size):
             window = SI.iloc[i:i + self.window_size, :]
-            results = window.mean() - window.iloc[0, :]
-            return PI.append(results, ignore_index=True)
+            results = (window.mean() - window.iloc[0, :]).values
+            pi.append(results)
+        return pd.DataFrame(pi, columns=['PI_90_10', 'PI_80_20', 'PI_70_30', 'PI_60_40'])
 
     def crps(self):
         """
         Calculate Continuous Ranked Probability Score for each window.
+        The input data for the demo is PaloDuro.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Continuous Ranked Probability Score values for each window.
         """
-
-        # # Calculate quantiles for each row
-        # ens_quantile = self.data.apply(lambda row: np.quantile(row, q=np.arange(0.01, 1.0, 0.01)), axis=1)
-        #
-        # # Rename columns to 'Q1', 'Q2', ..., 'Q99'
-        # ens_quantile.columns = ['Q' + str(i) for i in range(1, 100)]
-        #
-        # ens_quantile = pd.DataFrame(ens_quantile.tolist())
-        #
-        # # Calculate standard deviation
-        # stand_dev = (ens_quantile['Q99'] - ens_quantile['Q50']) / np.quantile(np.random.normal(size=100000), 0.99)
-        # stand_dev[stand_dev <= 0] = 1e-10
-
-        return pscore(self.data, self.data['Actual']).compute()
-
-        # Calculate nCRPS
-        # nCRPS = np.mean(CRPS_all) / max(df['Actual'])
-
-    def veritication_rank_histogram(self):
-        """
-        Calculate Veritication Rank Histogram for each window.
-
-        Returns:
-            pandas.DataFrame: DataFrame containing Veritication Rank Histogram values for each window.
-        """
-        pass
+        crps = []
+        for i, row in self.data.iterrows():
+            res = pscore(row[:9], row[-1]).compute()
+            crps.append(res[0])
+        crps_df = pd.DataFrame({'CRPS': crps})
+        return crps_df
 
 
 class MultipleTimeSeries(UncertaintyQualificationMetrics):
@@ -290,6 +288,7 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
     def correlation(self):
         """
         Calculate Correlation for each window.
+        The input data for the demo is plant_level_hourly_wind_power_forecast.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Correlation values for each window.
@@ -304,6 +303,7 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
     def mape(self):
         """
         Calculate Mean Absolute Percentage Error for each window.
+        The input data for the demo is plant_level_hourly_wind_power_forecast.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Mean Absolute Percentage Error values for each window.
@@ -318,6 +318,7 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
     def spread_index(self):
         """
         Calculate Spread Index for each window.
+        The input data for the demo is PaloDuro.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Spread Index values for each window.
@@ -344,17 +345,18 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
     def predictablity_index(self):
         """
         Calculate Predictablity Index.
+        The input data for the demo is PaloDuro.csv
 
         Returns:
             pandas.DataFrame: DataFrame containing Predictablity Index values for each window.
         """
         SI = self.spread_index()
-        PI = pd.DataFrame(columns=['PI_90_10', 'PI_80_20', 'PI_70_30', 'PI_60_40'])
-
+        pi = []
         for i in range(len(SI) - self.window_size):
             window = SI.iloc[i:i + self.window_size, :]
-            results = window.mean() - window.iloc[0, :]
-            return PI.append(results, ignore_index=True)
+            results = (window.mean() - window.iloc[0, :]).values
+            pi.append(results)
+        return pd.DataFrame(pi, columns=['PI_90_10', 'PI_80_20', 'PI_70_30', 'PI_60_40'])
 
     def kriging_variogram(self, windspeed_cols, latitude_col, longitude_col):
         """
