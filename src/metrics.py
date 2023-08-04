@@ -26,18 +26,6 @@ class UncertaintyQualificationMetrics(object):
         self.data = data
         self.window_size = window_size
 
-    def data_preprocess(self):
-        """
-        Preprocess the input data.
-
-        Returns:
-            pandas.DataFrame: DataFrame containing true and predicted values for each window.
-        """
-        data = self.data
-        data = data.dropna()
-        data = data.reset_index(drop=True)
-        return data
-
     @staticmethod
     def calculate_percentile(samples, percentile):
         sorted_samples = sorted(samples)
@@ -53,9 +41,11 @@ class UncertaintyQualificationMetrics(object):
             percentile_value = (lower_value + upper_value) / 2
         return percentile_value
 
+    @staticmethod
     def variogram(h, nugget, range_, sill):
         return nugget + sill * (1 - np.exp(-3 * h ** 2 / range_ ** 2))
 
+    @staticmethod
     def fit_variogram(h, gamma, func=variogram):
         popt, _ = curve_fit(func, h, gamma)
         return popt
