@@ -81,13 +81,12 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         Calculate Spectral Entropy for each window.
 
         Returns:
-            pandas.DataFrame: DataFrame containing Spectral Entropy values for each window.
+            list: List containing Spectral Entropy values for each window.
         """
-        entropy_df = pd.DataFrame(columns=['Entropy'])
+        entropy_df = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
-            result = self.calculate_entropy(window)
-            entropy_df.loc[i] = result
+            window = self.data[i:i + self.window_size].values.flatten()
+            entropy_df.append(self.calculate_entropy(window))
         return entropy_df
 
     def standard_deviation(self):
@@ -95,13 +94,12 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         Calculate Standard Deviation for each window.
 
         Returns:
-            pandas.DataFrame: DataFrame containing Standard Deviation values for each window.
+            list: List containing Standard Deviation values for each window.
         """
-        std_df = pd.DataFrame(columns=['Standard Deviation'])
+        std_df = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
-            result = np.std(window)
-            std_df.loc[i] = result
+            window = self.data[i:i + self.window_size].values
+            std_df.append(np.std(window))
         return std_df
 
     def turbulence_intensity(self):
@@ -109,13 +107,12 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         Calculate Turbulence Intensity for each window.
 
         Returns:
-            pandas.DataFrame: DataFrame containing Turbulence Intensity values for each window.
+            list: List containing Turbulence Intensity values for each window.
         """
-        tbl_df = pd.DataFrame(columns=['Turbulence Intensity'])
+        tbl_df = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
-            result = np.std(window) / (np.mean(window) + 0.001)
-            tbl_df.loc[i] = result
+            window = self.data[i:i + self.window_size].values
+            tbl_df.append(np.std(window) / (np.mean(window) + 0.001))
         return tbl_df
 
     def variability_index(self):
@@ -123,14 +120,14 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         Calculate Variability Index for each window.
 
         Returns:
-            pandas.DataFrame: DataFrame containing Variability Index values for each window.
+            list: List containing Variability Index values for each window.
         """
-        var_df = pd.DataFrame(columns=['Variability Index'])
+        Variability_Index = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
+            window = self.data[i:i + self.window_size].values
             result = (np.max(window) - np.min(window)) / (np.mean(window) + 0.001)
-            var_df.loc[i] = result
-        return var_df
+            Variability_Index.append(result)
+        return Variability_Index
 
 
 class EnsembleMember(UncertaintyQualificationMetrics):
