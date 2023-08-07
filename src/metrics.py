@@ -76,7 +76,7 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         """
         entropy_df = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size].values.flatten()
+            window = self.data[i:i + self.window_size - 1].values.flatten()
             entropy_df.append(self.calculate_entropy(window))
         return entropy_df
 
@@ -89,7 +89,7 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         """
         std_df = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size].values
+            window = self.data[i:i + self.window_size - 1].values
             std_df.append(np.std(window))
         return std_df
 
@@ -102,8 +102,8 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         """
         tbl_df = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size].values
-            tbl_df.append(np.std(window) / (np.mean(window) + 0.001))
+            window = self.data[i:i + self.window_size - 1].values
+            tbl_df.append(np.std(window) / np.mean(window))
         return tbl_df
 
     def variability_index(self):
@@ -115,8 +115,8 @@ class SingleTimeSeriesMovingWindowMetrics(UncertaintyQualificationMetrics):
         """
         Variability_Index = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size].values
-            result = (np.max(window) - np.min(window)) / (np.mean(window) + 0.001)
+            window = self.data[i:i + self.window_size - 1].values
+            result = (np.max(window) - np.min(window)) / np.mean(window)
             Variability_Index.append(result)
         return Variability_Index
 
@@ -142,7 +142,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
         """
         corr_df = pd.DataFrame(columns=['Correlation'])
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
+            window = self.data[i:i + self.window_size - 1]
             result = window.corr().iloc[0, 1]
             corr_df.loc[i] = result
         return corr_df
@@ -157,7 +157,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
         """
         mape_df = pd.DataFrame(columns=['MAPE'])
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
+            window = self.data[i:i + self.window_size - 1]
             mask = window.iloc[:, 0] != 0
             mape_df.loc[i] = (np.fabs(window.iloc[:, 0] - window.iloc[:, 1]) / window.iloc[:, 0])[mask].mean()
         return mape_df
@@ -172,7 +172,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
         """
         nrmse_values = []
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
+            window = self.data[i:i + self.window_size - 1]
             rmse = np.sqrt(((window.iloc[:, 0] - window.iloc[:, 1]) ** 2).mean())
             data_range = np.max(window.iloc[:, 0]) - np.min(window.iloc[:, 0])
             if data_range != 0:
@@ -192,7 +192,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
         """
         nmae_df = []  # pd.DataFrame(columns=['NMAE'])
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
+            window = self.data[i:i + self.window_size - 1]
             mae = np.mean(np.abs(window.iloc[:, 0] - window.iloc[:, 1]))
             data_range = (np.max(window.iloc[:, 0]) - np.min(window.iloc[:, 0]))
             if data_range != 0:
@@ -285,7 +285,7 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
         """
         corr_df = pd.DataFrame(columns=['Correlation'])
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
+            window = self.data[i:i + self.window_size - 1]
             result = window.corr().iloc[0, 1]
             corr_df.loc[i] = result
         return corr_df
@@ -300,7 +300,7 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
         """
         mape_df = pd.DataFrame(columns=['MAPE'])
         for i in range(len(self.data) - self.window_size + 1):
-            window = self.data[i:i + self.window_size]
+            window = self.data[i:i + self.window_size - 1]
             mask = window.iloc[:, 0] != 0
             mape_df.loc[i] = (np.fabs(window.iloc[:, 0] - window.iloc[:, 1]) / window.iloc[:, 0])[mask].mean()
         return mape_df
