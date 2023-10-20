@@ -32,14 +32,10 @@ class UncertaintyQualificationMetrics(object):
         n = len(samples)
         index = (percentile / 100) * (n + 1)
         if index.is_integer():
-            percentile_value = sorted_samples[int(index) - 1]
-        else:
-            lower_index = int(index)
-            upper_index = lower_index + 1
-            lower_value = sorted_samples[lower_index - 1]
-            upper_value = sorted_samples[upper_index - 1]
-            percentile_value = (lower_value + upper_value) / 2
-        return percentile_value
+            return sorted_samples[int(index) - 1]
+        lower_index = int(index)
+        upper_index = lower_index + 1
+        return (sorted_samples[lower_index - 1] + sorted_samples[upper_index - 1]) / 2
 
     @staticmethod
     def variogram(h, nugget, range_, sill):
@@ -179,8 +175,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
                 nrmse_values.append(rmse / data_range)
             else:
                 nrmse_values.append(rmse / 0.001)
-        nrmse_df = pd.DataFrame({'NRMSE': nrmse_values})
-        return nrmse_df
+        return pd.DataFrame({'NRMSE': nrmse_values})
 
     def nmae(self):
         """
@@ -200,8 +195,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
             else:
                 nmae_df.append(mae / 0.001)
 
-        nmae_df = pd.DataFrame({'NMAE': nmae_df})
-        return nmae_df
+        return pd.DataFrame({'NMAE': nmae_df})
 
     def spread_index(self):
         """
@@ -220,11 +214,10 @@ class EnsembleMember(UncertaintyQualificationMetrics):
             row_percentiles = [self.calculate_percentile(samples, p) for p in percentiles]
             percentile_df.loc[index] = row_percentiles
 
-        differences = []
-        for i in range(1, 5):
-            diff = percentile_df.iloc[:, -i] - percentile_df.iloc[:, i - 1]
-            differences.append(diff)
-
+        differences = [
+            percentile_df.iloc[:, -i] - percentile_df.iloc[:, i - 1]
+            for i in range(1, 5)
+        ]
         row_mean = self.data.mean(axis=1)
 
         return pd.DataFrame({
@@ -260,8 +253,7 @@ class EnsembleMember(UncertaintyQualificationMetrics):
         for i, row in self.data.iterrows():
             res = pscore(row[:9], row[-1]).compute()
             crps.append(res[0])
-        crps_df = pd.DataFrame({'CRPS': crps})
-        return crps_df
+        return pd.DataFrame({'CRPS': crps})
 
 
 class MultipleTimeSeries(UncertaintyQualificationMetrics):
@@ -320,11 +312,10 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
             row_percentiles = [self.calculate_percentile(samples, p) for p in percentiles]
             percentile_df.loc[index] = row_percentiles
 
-        differences = []
-        for i in range(1, 5):
-            diff = percentile_df.iloc[:, -i] - percentile_df.iloc[:, i - 1]
-            differences.append(diff)
-
+        differences = [
+            percentile_df.iloc[:, -i] - percentile_df.iloc[:, i - 1]
+            for i in range(1, 5)
+        ]
         row_mean = self.data.mean(axis=1)
 
         return pd.DataFrame({
@@ -379,6 +370,4 @@ class MultipleTimeSeries(UncertaintyQualificationMetrics):
             ranges.append(popt[1])
             sills.append(popt[2])
 
-        result = {'nugget': nuggets, 'range': ranges, 'sill': sills}
-
-        return result
+        return {'nugget': nuggets, 'range': ranges, 'sill': sills}
